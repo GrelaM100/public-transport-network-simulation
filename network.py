@@ -3,17 +3,23 @@ import operator
 import random
 from passenger import Passenger
 from bus import Bus
+from stop import Stop
+
 
 class Network:
     # docelowo będzie można podawać własne nazwy linii
-    def __init__(self, env, bus_size, bus_frequency):
+    def __init__(self, env, bus_size, bus_frequency, canvas):
         self.env = env
         self.bus_size = bus_size
         self.bus_frequency = bus_frequency
-        self.lines_stops = {"Zielona": ["Trawa", "Światło", "Jabłko", "Pojęcie", "Żaba"],
-                            "Żółta": ["Piasek", "Słońce", "Zęby", "Żółtko", "Światło", "Banan"]}
+        # TODO set positions
+        self.lines_stops = {"Zielona": [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
+                                        Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]}
+        # "Żółta": [Stop("Piasek", 20, 20), Stop("Słońce", 220, 220), Stop("Zęby", 420, 420),
+        #         Stop("Żółtko", 620, 620), Stop("Światło", 820, 820), Stop("Banan", 1020, 1020)]}
         self.passengers_at_stops = []
         self.buses = []
+        self.canvas = canvas
 
     def setup(self):
         self.drive_from_depot()
@@ -33,10 +39,14 @@ class Network:
 
     def drive_from_depot(self):
         for line, stops in self.lines_stops.items():
-            self.buses.append(Bus(self.env, line, stops, self.bus_size))
-            self.buses.append(Bus(self.env, line, stops, self.bus_size, "other_way"))
-            print(str(Bus(self.env, line, stops, self.bus_size)) + " wyjechał z zajezdni")
-            print(str(Bus(self.env, line, stops, self.bus_size, "other_way")) + " wyjechał z zajezdni")
+            bus1 = Bus(self.env, line, stops, self.bus_size)
+            bus2 = Bus(self.env, line, stops, self.bus_size, "other_way")
+            self.buses.append(bus1)
+            self.buses.append(bus2)
+            print(str(bus1) + " wyjechał z zajezdni")
+            bus1.visualize_bus_at_stop(bus1.future_stops[0], self.canvas)
+            print(str(bus2) + " wyjechał z zajezdni")
+            bus2.visualize_bus_at_stop(bus2.future_stops[0], self.canvas)
 
     def run_lines(self):
         buses_ending_route = []
