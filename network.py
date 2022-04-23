@@ -1,5 +1,3 @@
-import functools
-import operator
 import random
 from passenger import Passenger
 from bus import Bus
@@ -13,7 +11,8 @@ class Network:
         self.env = env
         self.bus_size = bus_size
         self.bus_frequency = bus_frequency
-        self.lines_stops = None
+        self.lines_stops = {}
+        self.all_stops = []
         self.passengers_at_stops = []
         self.buses = []
         self.canvas = canvas
@@ -24,15 +23,12 @@ class Network:
         self.passengers_arriving()
 
     def passengers_arriving(self):
-        all_stops = list(set(functools.reduce(operator.iconcat, self.lines_stops.values(), [])))
-        print(all_stops)
-
         no_of_passengers = random.randint(4, 7)
         for i in range(no_of_passengers):
-            rand_start = random.sample(all_stops, 1)
-            rand_destination = random.sample(all_stops, 1)
+            rand_start = random.sample(self.all_stops, 1)
+            rand_destination = random.sample(self.all_stops, 1)
             while rand_start == rand_destination:
-                rand_destination = random.sample(all_stops, 1)
+                rand_destination = random.sample(self.all_stops, 1)
             new_passenger = Passenger(self.env, rand_start[0], rand_destination[0])
             self.passengers_at_stops.append(new_passenger)
             print(str(new_passenger) + " przyszedł na przystanek")
@@ -72,20 +68,37 @@ class Network:
             print(str(bus))
 
     def initialize_network(self, lines=None):
-        green_line = Line('Zielona', 'green',
-                          [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
-                           Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)])
-        yellow_line = Line('Żółta', 'yellow', [Stop("Piasek", 20, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
-                                               Stop("Zęby", 420, 220),
-                                               Stop("Żółtko", 620, 100),
-                                               Stop("Banan", 1000, 20)])
-
-        default_network_lines = {green_line.name: green_line, yellow_line.name: yellow_line}
-
         if lines is None:
-            lines = default_network_lines
+            green_line_stops = [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
+                                Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]
+            green_line = Line('Zielona', 'green')
+            yellow_line = Line('Żółta', 'yellow')
+            yellow_line_stops = [Stop("Piasek", 20, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
+                                 Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 1000, 20)]
+            self.add_line_to_network(green_line, green_line_stops)
+            self.add_line_to_network(yellow_line, yellow_line_stops)
+            print(self.all_stops)
+        else:
+            for line in lines:
+                #TODO dodawanie linii i przystanków
+                raise NotImplementedError
 
-        self.lines_stops = lines
+    def add_line_to_network(self, line, stops):
+        if line.name not in self.lines_stops:
+            self.lines_stops[line.name] = line
+            for stop in stops:
+                stop_to_add = self.get_stop_by_name(stop.name)
+                if stop_to_add is None:
+                    stop_to_add = stop
+                    self.all_stops.append(stop_to_add)
+                line.add_stop_to_line(stop_to_add)
+
+    def get_stop_by_name(self, name):
+        for stop in self.all_stops:
+            if stop.name == name:
+                return stop
+
+        return None
 
     def draw_network(self):
         for line in self.lines_stops.values():
