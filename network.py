@@ -4,6 +4,7 @@ import random
 from passenger import Passenger
 from bus import Bus
 from stop import Stop
+from line import Line
 
 
 class Network:
@@ -12,21 +13,20 @@ class Network:
         self.env = env
         self.bus_size = bus_size
         self.bus_frequency = bus_frequency
-        # TODO set positions
-        self.lines_stops = {"Zielona": [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
-                                        Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]}
-        # "Żółta": [Stop("Piasek", 20, 20), Stop("Słońce", 220, 220), Stop("Zęby", 420, 420),
-        #         Stop("Żółtko", 620, 620), Stop("Światło", 820, 820), Stop("Banan", 1020, 1020)]}
+        self.lines_stops = None
         self.passengers_at_stops = []
         self.buses = []
         self.canvas = canvas
 
-    def setup(self):
+    def setup(self, lines=None):
+        self.initialize_network(lines)
         self.drive_from_depot()
         self.passengers_arriving()
 
     def passengers_arriving(self):
         all_stops = list(set(functools.reduce(operator.iconcat, self.lines_stops.values(), [])))
+        print(all_stops)
+
         no_of_passengers = random.randint(4, 7)
         for i in range(no_of_passengers):
             rand_start = random.sample(all_stops, 1)
@@ -38,9 +38,9 @@ class Network:
             print(str(new_passenger) + " przyszedł na przystanek")
 
     def drive_from_depot(self):
-        for line, stops in self.lines_stops.items():
-            bus1 = Bus(self.env, line, stops, self.bus_size)
-            bus2 = Bus(self.env, line, stops, self.bus_size, "other_way")
+        for name, line in self.lines_stops.items():
+            bus1 = Bus(self.env, name, line.color, line.stops, self.bus_size)
+            bus2 = Bus(self.env, name, line.color, line.stops, self.bus_size, "other_way")
             self.buses.append(bus1)
             self.buses.append(bus2)
             print(str(bus1) + " wyjechał z zajezdni")
@@ -70,3 +70,28 @@ class Network:
         for bus in buses_ending_route:
             self.buses.remove(bus)
             print(str(bus))
+
+    def initialize_network(self, lines=None):
+        green_line = Line('Zielona', 'green',
+                          [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
+                           Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)])
+        yellow_line = Line('Żółta', 'yellow', [Stop("Piasek", 20, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
+                                               Stop("Zęby", 420, 220),
+                                               Stop("Żółtko", 620, 100),
+                                               Stop("Banan", 1000, 20)])
+
+        default_network_lines = {green_line.name: green_line, yellow_line.name: yellow_line}
+
+        if lines is None:
+            lines = default_network_lines
+
+        self.lines_stops = lines
+
+    def draw_network(self):
+        for line in self.lines_stops.values():
+            for stop in line.stops:
+                self.canvas.create_text(stop.x_position, stop.y_position, fill='red', text=stop)
+                next_stop = line.get_next_stop(stop)
+                if next_stop is not None:
+                    self.canvas.create_line(stop.x_position, stop.y_position, next_stop.x_position, next_stop.y_position,
+                                            fill=line.color)
