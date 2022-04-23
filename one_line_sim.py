@@ -40,19 +40,11 @@ class MainWindow:
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.network.setup()
-        lines = []
-
-        for stop in self.network.lines_stops['Zielona']:
-            self.canvas.create_text(stop.x_position, stop.y_position, fill='red', text=stop)
-            lines.append((stop.x_position, stop.y_position, stop.x_position + 220, stop.y_position + 220))
-
-        lines = lines[:-1]
-        for line in lines:
-            self.canvas.create_line(line[0], line[1], line[2], line[3], fill='green')
+        self.network.draw_network()
 
     def main(self, network):
         network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency))
-        network.env.run(until=10)
+        network.env.run()
 
     def run_simulation(self, env, bus_size, bus_frequency, line_colour="Zielona"):
         time_passed = 0

@@ -3,8 +3,9 @@ import time
 
 
 class Bus:
-    def __init__(self, env, line_colour, future_stops, size, from_end_to_start=None):
+    def __init__(self, env, line_name, line_colour, future_stops, size, from_end_to_start=None):
         self.env = env
+        self.line_name = line_name
         self.line_colour = line_colour
         self.future_stops = future_stops.copy()
         self.passengers = []
@@ -16,9 +17,9 @@ class Bus:
 
     def __str__(self):
         if len(self.future_stops) != 0:
-            return "Autobus linii " + self.line_colour + " na przystanku " + str(self.future_stops[0])
+            return "Autobus linii " + self.line_name + " na przystanku " + str(self.future_stops[0])
         else:
-            return "Autobus linii " + self.line_colour + " zjeżdża do zajezdni"
+            return "Autobus linii " + self.line_name + " zjeżdża do zajezdni"
 
     def drive_from_stop(self):
         current_stop = self.future_stops.pop(0)
@@ -56,10 +57,11 @@ class Bus:
     def visualize_bus_at_stop(self, stop, canvas):
         x_position = stop.x_position
         y_position = stop.y_position
-        if self.bus_gui is None:
-            self.canvas = canvas
-            self.bus_gui = self.canvas.create_rectangle(x_position - 10, y_position - 5, x_position + 10,
-                                                        y_position + 5, fill='red')
-        else:
-            self.canvas.coords(self.bus_gui, x_position - 10, y_position - 5, x_position + 10, y_position + 5)
-            self.canvas.pack()
+        if x_position != -1 and y_position != -1:
+            if self.bus_gui is None:
+                self.canvas = canvas
+                self.bus_gui = self.canvas.create_rectangle(x_position - 10, y_position - 5, x_position + 10,
+                                                            y_position + 5, fill=self.line_colour)
+            else:
+                self.canvas.coords(self.bus_gui, x_position - 10, y_position - 5, x_position + 10, y_position + 5)
+                self.canvas.pack()
