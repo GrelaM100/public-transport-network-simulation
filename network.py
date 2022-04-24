@@ -31,6 +31,7 @@ class Network:
                 rand_destination = random.sample(self.all_stops, 1)
             new_passenger = Passenger(self.env, rand_start[0], rand_destination[0])
             self.passengers_at_stops.append(new_passenger)
+            rand_start[0].add_passenger(new_passenger)
             print(str(new_passenger) + " przyszedł na przystanek")
 
     def drive_from_depot(self):
@@ -46,6 +47,7 @@ class Network:
 
     def run_lines(self):
         buses_ending_route = []
+        self.visualize_passengers_at_stops()
         for bus in self.buses:
             hopped_off = bus.drop_passengers_off()
             hopped_on = bus.take_passengers(self.passengers_at_stops)
@@ -69,15 +71,14 @@ class Network:
 
     def initialize_network(self, lines=None):
         if lines is None:
-            green_line_stops = [Stop("Trawa", 20, 20), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
+            green_line_stops = [Stop("Trawa", 20, 50), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
                                 Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]
             green_line = Line('Zielona', 'green')
             yellow_line = Line('Żółta', 'yellow')
-            yellow_line_stops = [Stop("Piasek", 20, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
-                                 Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 1000, 20)]
+            yellow_line_stops = [Stop("Piasek", 50, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
+                                 Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 1000, 50)]
             self.add_line_to_network(green_line, green_line_stops)
             self.add_line_to_network(yellow_line, yellow_line_stops)
-            print(self.all_stops)
         else:
             for line in lines:
                 #TODO dodawanie linii i przystanków
@@ -106,5 +107,13 @@ class Network:
                 self.canvas.create_text(stop.x_position, stop.y_position, fill='red', text=stop)
                 next_stop = line.get_next_stop(stop)
                 if next_stop is not None:
-                    self.canvas.create_line(stop.x_position, stop.y_position, next_stop.x_position, next_stop.y_position,
-                                            fill=line.color)
+                    self.canvas.create_line(stop.x_position, stop.y_position, next_stop.x_position,
+                                            next_stop.y_position, fill=line.color)
+
+    def visualize_passengers_at_stops(self):
+        for stop in self.all_stops:
+            if stop.stop_gui is None:
+                stop.stop_gui = self.canvas.create_text(stop.x_position, stop.y_position - 20,
+                                                        text=str(len(stop.passengers_at_stop)), fill='red', font='20')
+            else:
+                self.canvas.itemconfig(stop.stop_gui, text=str(len(stop.passengers_at_stop)))
