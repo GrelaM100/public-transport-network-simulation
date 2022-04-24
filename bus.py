@@ -50,6 +50,8 @@ class Bus:
                     passenger.destination_stop in self.future_stops and \
                     len(self.passengers) < self.size:
                 passenger.current_stop = Stop('w drodze')
+                if passenger in current_stop.passengers_at_stop:
+                    current_stop.remove_passenger(passenger)
                 self.passengers.append(passenger)
                 taken_passengers.append(passenger)
         return taken_passengers

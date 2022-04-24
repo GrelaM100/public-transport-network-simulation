@@ -4,6 +4,7 @@ class Stop:
         self.x_position = x_position
         self.y_position = y_position
         self.passengers_at_stop = []
+        self.stop_gui = None
 
     def __repr__(self):
         return self.name
@@ -16,4 +17,7 @@ class Stop:
 
     def add_passenger(self, passenger):
         self.passengers_at_stop.append(passenger)
+
+    def remove_passenger(self, passenger):
+        self.passengers_at_stop.remove(passenger)
 

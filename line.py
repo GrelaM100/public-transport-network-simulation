@@ -27,3 +27,6 @@ class Line:
             next_stop = self.stops[current_stop_index + 1]
 
         return next_stop
+
+    def add_stop_to_line(self, stop):
+        self.stops.append(stop)
