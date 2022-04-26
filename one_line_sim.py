@@ -22,10 +22,12 @@ class MainWindow:
         self.entry_bus_size.insert(END, '22')
         self.entry_bus_frequency = Entry(self.window)
         self.entry_bus_frequency.insert(END, '4')
-        self.canvas.create_window(70, 20, window=self.entry_bus_size)
-        self.canvas.create_window(70, 40, window=self.entry_bus_frequency)
+        self.canvas.create_text(70, 20, text='Bus size')
+        self.canvas.create_window(70, 40, window=self.entry_bus_size)
+        self.canvas.create_text(70, 60, text='Bus frequency')
+        self.canvas.create_window(70, 80, window=self.entry_bus_frequency)
         self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
-        self.canvas.create_window(110, 70, window=self.start_button)
+        self.canvas.create_window(115, 110, window=self.start_button)
 
     def start_simulation(self):
         self.initial_drawing()
