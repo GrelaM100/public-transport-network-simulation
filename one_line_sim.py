@@ -17,17 +17,17 @@ class MainWindow:
         self.network = None
         self.window = main_window
         self.canvas = Canvas(self.window, width=200, height=200)
-        self.canvas.pack()
+        self.canvas.pack(fill='both', expand=True)
         self.entry_bus_size = Entry(self.window)
         self.entry_bus_size.insert(END, '22')
         self.entry_bus_frequency = Entry(self.window)
         self.entry_bus_frequency.insert(END, '4')
-        self.canvas.create_text(70, 20, text='Bus size')
-        self.canvas.create_window(70, 40, window=self.entry_bus_size)
-        self.canvas.create_text(70, 60, text='Bus frequency')
-        self.canvas.create_window(70, 80, window=self.entry_bus_frequency)
+        self.canvas.create_text(85, 20, text='Bus size')
+        self.canvas.create_window(85, 40, window=self.entry_bus_size)
+        self.canvas.create_text(85, 60, text='Bus frequency')
+        self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
         self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
-        self.canvas.create_window(115, 110, window=self.start_button)
+        self.canvas.create_window(130, 110, window=self.start_button)
 
     def start_simulation(self):
         self.initial_drawing()
@@ -38,7 +38,7 @@ class MainWindow:
         width = 1024
         height = 1024
         self.canvas = Canvas(self.window, width=width, height=height, bg='black')
-        self.canvas.pack()
+        self.canvas.pack(fill='both', expand=True)
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.network.setup()
