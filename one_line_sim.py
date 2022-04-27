@@ -36,6 +36,7 @@ class MainWindow:
         self.previous_stop = None
 
     def start_simulation(self):
+        self.start_button.destroy()
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.canvas.unbind('<Button 1>')
@@ -45,14 +46,16 @@ class MainWindow:
 
     def initial_drawing(self):
         self.canvas.destroy()
-        width = 1024
+        width = 1124
         height = 1024
         self.canvas = Canvas(self.window, width=width, height=height, bg='black')
         self.canvas.pack(fill='both', expand=True)
+        side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
         self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
         add_line_button = Button(text='Add line', command=self.add_line)
-        self.canvas.create_window(1000, 1000, window=self.start_button)
-        self.canvas.create_window(980, 40, window=add_line_button)
+        side_bar.create_window(50, 1000, window=self.start_button)
+        side_bar.create_window(50, 40, window=add_line_button)
+        self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
 
     def add_line(self):
