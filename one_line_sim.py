@@ -34,9 +34,10 @@ class MainWindow:
         self.lines = None
         self.chosen_line = None
         self.previous_stop = None
+        self.all_stops = []
 
     def start_simulation(self):
-        self.start_button.destroy()
+        self.canvas.delete('all')
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.canvas.unbind('<Button 1>')
@@ -59,6 +60,7 @@ class MainWindow:
         self.canvas.bind("<Button-1>", self.add_stop)
 
     def add_line(self):
+        self.previous_stop = None
         line_name_entry = Entry(self.window)
         line_name_entry.bind('<Return>', lambda event: self.accept_line_name(event, line_name_entry))
         self.canvas.create_window(500, 500, window=line_name_entry)
@@ -77,21 +79,39 @@ class MainWindow:
         if self.chosen_line is not None:
             x = event.x
             y = event.y
-            bus_stop_entry = Entry(self.window)
-            bus_stop_entry.bind('<Return>', lambda event: self.accept_name(event, bus_stop_entry, x, y))
-            self.canvas.create_window(x, y, window=bus_stop_entry)
+            stop_checker = self.get_stop_from_network(x, y)
+            if stop_checker is None:
+                bus_stop_entry = Entry(self.window)
+                bus_stop_entry.bind('<Return>', lambda event: self.accept_name(event, bus_stop_entry, x, y))
+                self.canvas.create_window(x, y, window=bus_stop_entry)
+            else:
+                self.accept_name(None, None, x, y, stop_checker)
 
-    def accept_name(self, event, bus_stop_entry, x, y):
-        bus_stop_name = bus_stop_entry.get()
-        bus_stop_entry.destroy()
-        added_stop = Stop(bus_stop_name, x, y)
+    def accept_name(self, event, bus_stop_entry, x, y, stop_in_network=None):
+        if stop_in_network is None:
+            bus_stop_name = bus_stop_entry.get()
+            bus_stop_entry.destroy()
+            added_stop = Stop(bus_stop_name, x, y)
+            self.canvas.create_text(x, y, fill='red', text=added_stop)
+        else:
+            added_stop = stop_in_network
+
         self.chosen_line.add_stop_to_line(added_stop)
-        self.canvas.create_text(x, y, fill='red', text=added_stop)
-        if self.previous_stop is not None and self.previous_stop in self.chosen_line.stops:
-            self.canvas.create_line(self.previous_stop.x_position, self.previous_stop.y_position, x,
-                                    y, fill=self.chosen_line.color)
+        if self.previous_stop is not None:
+            self.canvas.create_line(self.previous_stop.x_position, self.previous_stop.y_position, added_stop.x_position,
+                                    added_stop.y_position, fill=self.chosen_line.color)
 
         self.previous_stop = added_stop
+        if added_stop not in self.all_stops:
+            self.all_stops.append(added_stop)
+
+    def get_stop_from_network(self, x, y):
+        for stop in self.all_stops:
+            if x - 10 <= stop.x_position <= x + 10:
+                if y - 10 <= stop.y_position <= y + 10:
+                    return stop
+
+        return None
 
     def main(self, network):
         network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency))
