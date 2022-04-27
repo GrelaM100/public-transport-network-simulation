@@ -81,8 +81,7 @@ class Network:
             self.add_line_to_network(yellow_line, yellow_line_stops)
         else:
             for line in lines:
-                #TODO dodawanie linii i przystanków
-                raise NotImplementedError
+                self.add_line_to_network(Line(line.name, line.color), line.stops)
 
     def add_line_to_network(self, line, stops):
         if line.name not in self.lines_stops:
