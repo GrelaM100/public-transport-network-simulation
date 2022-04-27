@@ -2,6 +2,8 @@ import simpy
 import random
 from tkinter import *
 from network import Network
+from stop import Stop
+from line import Line
 import threading
 import time
 
@@ -26,11 +28,18 @@ class MainWindow:
         self.canvas.create_window(85, 40, window=self.entry_bus_size)
         self.canvas.create_text(85, 60, text='Bus frequency')
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
-        self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
+        self.start_button = Button(text='Start', command=self.initial_drawing)
         self.canvas.create_window(130, 110, window=self.start_button)
+        #TODO zmienić na None
+        self.lines = [Line('Zielona', 'green')]
+        self.previous_stop = None
 
     def start_simulation(self):
-        self.initial_drawing()
+        env = simpy.Environment()
+        self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
+        self.canvas.unbind('<Button 1>')
+        self.network.setup(self.lines)
+        self.network.draw_network()
         self.main(self.network)
 
     def initial_drawing(self):
@@ -39,10 +48,28 @@ class MainWindow:
         height = 1024
         self.canvas = Canvas(self.window, width=width, height=height, bg='black')
         self.canvas.pack(fill='both', expand=True)
-        env = simpy.Environment()
-        self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
-        self.network.setup()
-        self.network.draw_network()
+        self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
+        self.canvas.create_window(1000, 1000, window=self.start_button)
+        self.canvas.bind("<Button-1>", self.add_stop)
+
+    def add_stop(self, event):
+        x = event.x
+        y = event.y
+        bus_stop_entry = Entry(self.window)
+        bus_stop_entry.bind('<Return>', lambda event: self.accept_name(event, bus_stop_entry, x, y))
+        self.canvas.create_window(x, y, window=bus_stop_entry)
+
+    def accept_name(self, event, bus_stop_entry, x, y):
+        bus_stop_name = bus_stop_entry.get()
+        bus_stop_entry.destroy()
+        added_stop = Stop(bus_stop_name, x, y)
+        self.lines[0].add_stop_to_line(added_stop)
+        self.canvas.create_text(x, y, fill='red', text=added_stop)
+        if self.previous_stop is not None:
+            self.canvas.create_line(self.previous_stop.x_position, self.previous_stop.y_position, x,
+                                    y, fill=self.lines[0].color)
+
+        self.previous_stop = added_stop
 
     def main(self, network):
         network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency))
