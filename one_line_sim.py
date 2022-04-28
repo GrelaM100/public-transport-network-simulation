@@ -54,7 +54,7 @@ class MainWindow:
         side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
         self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
         add_line_button = Button(text='Add line', command=self.add_line)
-        side_bar.create_window(50, 1000, window=self.start_button)
+        side_bar.create_window(50, 100, window=self.start_button)
         side_bar.create_window(50, 40, window=add_line_button)
         self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
