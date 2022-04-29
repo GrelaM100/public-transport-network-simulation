@@ -17,9 +17,9 @@ class Bus:
 
     def __str__(self):
         if len(self.future_stops) != 0:
-            return "Autobus linii " + self.line_name + " na przystanku " + str(self.future_stops[0])
+            return "Autobus linii " + self.line_colour + " na przystanku " + str(self.future_stops[0])
         else:
-            return "Autobus linii " + self.line_name + " zjeżdża do zajezdni"
+            return "Autobus linii " + self.line_colour + " zjeżdża do zajezdni"
 
     def drive_from_stop(self):
         current_stop = self.future_stops.pop(0)
@@ -34,26 +34,32 @@ class Bus:
     def drop_passengers_off(self):
         current_stop = self.future_stops[0]
         dropped_passengers = []
-        for passenger_in_bus in self.passengers:
-            if passenger_in_bus.destination_stop == current_stop:
-                passenger_in_bus.current_stop = current_stop
-                dropped_passengers.append(passenger_in_bus)
-        for passenger in dropped_passengers:
-            self.passengers.remove(passenger)
+        if len(self.future_stops) > 1:
+            for passenger_in_bus in self.passengers:
+                passenger_in_bus.at_stop(current_stop)
+                if passenger_in_bus.decide_to_hop_off(current_stop, self.future_stops[1]):
+                    passenger_in_bus.current_stop = current_stop
+                    dropped_passengers.append(passenger_in_bus)
+            for passenger in dropped_passengers:
+                self.passengers.remove(passenger)
+        else:
+            dropped_passengers == self.passengers.copy()
         return dropped_passengers
+
 
     def take_passengers(self, passengers_everywhere):
         current_stop = self.future_stops[0]
         taken_passengers = []
-        for passenger in passengers_everywhere:
-            if passenger.current_stop == current_stop and \
-                    passenger.destination_stop in self.future_stops and \
-                    len(self.passengers) < self.size:
-                passenger.current_stop = Stop('w drodze')
-                if passenger in current_stop.passengers_at_stop:
-                    current_stop.remove_passenger(passenger)
-                self.passengers.append(passenger)
-                taken_passengers.append(passenger)
+        if len(self.future_stops) > 1:
+            for passenger in passengers_everywhere:
+                if passenger.current_stop == current_stop and \
+                        passenger.decide_to_hop_on(self.future_stops[1]) and \
+                        len(self.passengers) < self.size:
+                    passenger.current_stop = Stop('drodze')
+                    if passenger in current_stop.passengers_at_stop:
+                        current_stop.remove_passenger(passenger)
+                    self.passengers.append(passenger)
+                    taken_passengers.append(passenger)
         return taken_passengers
 
     def visualize_bus_at_stop(self, stop, canvas):
