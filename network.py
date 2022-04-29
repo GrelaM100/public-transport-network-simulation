@@ -3,6 +3,7 @@ from passenger import Passenger
 from bus import Bus
 from stop import Stop
 from line import Line
+import networkx as nx
 
 
 class Network:
@@ -16,9 +17,11 @@ class Network:
         self.passengers_at_stops = []
         self.buses = []
         self.canvas = canvas
+        self.graph = None
 
     def setup(self, lines=None):
         self.initialize_network(lines)
+        self.graph = self.create_graph()
         self.drive_from_depot()
         self.passengers_arriving()
 
@@ -29,10 +32,10 @@ class Network:
             rand_destination = random.sample(self.all_stops, 1)
             while rand_start == rand_destination:
                 rand_destination = random.sample(self.all_stops, 1)
-            new_passenger = Passenger(self.env, rand_start[0], rand_destination[0])
+            itinerary = nx.shortest_path(self.graph, rand_start[0], rand_destination[0])
+            new_passenger = Passenger(self.env, rand_start[0], rand_destination[0], itinerary)
             self.passengers_at_stops.append(new_passenger)
             rand_start[0].add_passenger(new_passenger)
-            print(str(new_passenger) + " przyszedł na przystanek")
 
     def drive_from_depot(self):
         for name, line in self.lines_stops.items():
@@ -40,9 +43,7 @@ class Network:
             bus2 = Bus(self.env, name, line.color, line.stops, self.bus_size, "other_way")
             self.buses.append(bus1)
             self.buses.append(bus2)
-            print(str(bus1) + " wyjechał z zajezdni")
             bus1.visualize_bus_at_stop(bus1.future_stops[0], self.canvas)
-            print(str(bus2) + " wyjechał z zajezdni")
             bus2.visualize_bus_at_stop(bus2.future_stops[0], self.canvas)
 
     def run_lines(self):
@@ -52,22 +53,15 @@ class Network:
             hopped_off = bus.drop_passengers_off()
             hopped_on = bus.take_passengers(self.passengers_at_stops)
             current_stop, end_of_line = bus.drive_from_stop()
-            print("Przystanek: ", current_stop)
-            print("Wysiedli: ")
             for passenger in hopped_off:
                 self.passengers_at_stops.append(passenger)
-                print(str(passenger))
-            print("Wsiedli: ")
             for passenger in hopped_on:
                 self.passengers_at_stops.remove(passenger)
-                print(str(passenger))
             if end_of_line:
                 buses_ending_route.append(bus)
-            print("\n")
 
         for bus in buses_ending_route:
             self.buses.remove(bus)
-            print(str(bus))
 
     def initialize_network(self, lines=None):
         if lines is None:
@@ -97,7 +91,6 @@ class Network:
         for stop in self.all_stops:
             if stop.name == name:
                 return stop
-
         return None
 
     def draw_network(self):
@@ -116,3 +109,16 @@ class Network:
                                                         text=str(len(stop.passengers_at_stop)), fill='red', font='20')
             else:
                 self.canvas.itemconfig(stop.stop_gui, text=str(len(stop.passengers_at_stop)))
+
+    def create_graph(self):
+        graph = nx.Graph()
+        graph.add_nodes_from(self.all_stops)
+        for line in self.lines_stops.values():
+            connected_stops = []
+            for i in range(len(line.stops)):
+                if i != len(line.stops) - 1:
+                    connected_stops.append((line.stops[i], line.stops[i + 1]))
+                if i != 0:
+                    connected_stops.append((line.stops[i - 1], line.stops[i]))
+            graph.add_edges_from(connected_stops)
+        return graph
