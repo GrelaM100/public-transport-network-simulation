@@ -60,6 +60,8 @@ class Bus:
                         current_stop.remove_passenger(passenger)
                     self.passengers.append(passenger)
                     taken_passengers.append(passenger)
+            for passenger in self.passengers:
+                passenger.time_commuting += 1
         return taken_passengers
 
     def visualize_bus_at_stop(self, stop, canvas):
