@@ -3,11 +3,11 @@ from passenger import Passenger
 from bus import Bus
 from stop import Stop
 from line import Line
+from network_statistics import Statistics
 import networkx as nx
 
 
 class Network:
-    # docelowo będzie można podawać własne nazwy linii
     def __init__(self, env, bus_size, bus_frequency, canvas):
         self.env = env
         self.bus_size = bus_size
@@ -18,12 +18,15 @@ class Network:
         self.buses = []
         self.canvas = canvas
         self.graph = None
+        self.traffic_jams = []
+        self.statistics = None
 
     def setup(self, lines=None):
         self.initialize_network(lines)
         self.graph = self.create_graph()
         self.drive_from_depot()
         self.passengers_arriving()
+        self.statistics = Statistics(self.bus_size)
 
     def passengers_arriving(self):
         no_of_passengers = random.randint(4, 7)
@@ -50,16 +53,29 @@ class Network:
         buses_ending_route = []
         self.visualize_passengers_at_stops()
         for bus in self.buses:
-            hopped_off = bus.drop_passengers_off()
-            hopped_on = bus.take_passengers(self.passengers_at_stops)
-            current_stop, end_of_line = bus.drive_from_stop()
-            for passenger in hopped_off:
-                self.passengers_at_stops.append(passenger)
-            for passenger in hopped_on:
-                self.passengers_at_stops.remove(passenger)
-            if end_of_line:
-                buses_ending_route.append(bus)
-
+            if bus.future_stops[0] in self.traffic_jams:
+                for passenger in bus.passengers:
+                    passenger.time_commuting += 1
+                self.statistics.register_data("jam", 1)
+                self.statistics.register_data("bus", len(bus.passengers))
+            else:
+                hopped_off = bus.drop_passengers_off()
+                hopped_on = bus.take_passengers(self.passengers_at_stops)
+                current_stop, end_of_line = bus.drive_from_stop()
+                for passenger in hopped_off:
+                    if passenger.end_journey() != None:
+                        self.statistics.register_data("pas", passenger.end_journey())
+                    else:
+                        self.passengers_at_stops.append(passenger)
+                for passenger in hopped_on:
+                    self.passengers_at_stops.remove(passenger)
+                if end_of_line:
+                    buses_ending_route.append(bus)
+                else:
+                    self.statistics.register_data("bus", len(bus.passengers))
+                    
+        for passenger in self.passengers_at_stops:
+            passenger.time_commuting += 1
         for bus in buses_ending_route:
             self.buses.remove(bus)
 
@@ -122,3 +138,7 @@ class Network:
                     connected_stops.append((line.stops[i - 1], line.stops[i]))
             graph.add_edges_from(connected_stops)
         return graph
+
+    def create_traffic_jams(self):
+        no_of_jams = random.randint(0, 2)
+        self.traffic_jams = random.sample(self.all_stops, no_of_jams)
