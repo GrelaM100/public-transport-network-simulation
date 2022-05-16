@@ -5,6 +5,7 @@ class Passenger:
         self.destination_stop = destination_stop
         self.itinerary = itinerary
         self.itinerary.remove(self.current_stop)
+        self.time_commuting = 0
 
     def __str__(self):
         return 'Pasażer jadący do ' + str(self.destination_stop) + ' przez ' + str(self.itinerary) \
@@ -22,3 +23,8 @@ class Passenger:
 
     def at_stop(self, stop):
         self.itinerary.remove(stop)
+
+    def end_journey(self):
+        if len(self.itinerary) == 0:
+            return self.time_commuting
+        return None
