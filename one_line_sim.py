@@ -127,7 +127,10 @@ class MainWindow:
             time_passed += 1
             if time_passed % bus_frequency == 0:
                 self.network.drive_from_depot()
+            if time_passed % 10 == 0:
+                print(self.network.statistics.return_statistics())
             self.network.passengers_arriving()
+            self.network.create_traffic_jams()
 
 
 if __name__ == "__main__":
