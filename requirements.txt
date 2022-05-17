@@ -1,2 +1,3 @@
 networkx==2.8
 simpy==4.0.1
+numpy~=1.22.3

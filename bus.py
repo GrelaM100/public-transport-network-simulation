@@ -43,9 +43,8 @@ class Bus:
             for passenger in dropped_passengers:
                 self.passengers.remove(passenger)
         else:
-            dropped_passengers == self.passengers.copy()
+            dropped_passengers = self.passengers.copy()
         return dropped_passengers
-
 
     def take_passengers(self, passengers_everywhere):
         current_stop = self.future_stops[0]

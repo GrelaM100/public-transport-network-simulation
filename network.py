@@ -63,7 +63,7 @@ class Network:
                 hopped_on = bus.take_passengers(self.passengers_at_stops)
                 current_stop, end_of_line = bus.drive_from_stop()
                 for passenger in hopped_off:
-                    if passenger.end_journey() != None:
+                    if passenger.end_journey() is not None:
                         self.statistics.register_data("pas", passenger.end_journey())
                     else:
                         self.passengers_at_stops.append(passenger)
