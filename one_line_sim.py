@@ -1,12 +1,12 @@
-import simpy
-import random
+from worker import Worker, sleep
 from tkinter import *
+from tkinter.colorchooser import askcolor
+
+import simpy
+
+from line import Line
 from network import Network
 from stop import Stop
-from line import Line
-import threading
-import time
-from tkinter.colorchooser import askcolor
 
 
 def get_params_for_sim():
@@ -29,11 +29,12 @@ class MainWindow:
         self.canvas.create_window(85, 40, window=self.entry_bus_size)
         self.canvas.create_text(85, 60, text='Bus frequency')
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
-        self.start_button = Button(text='Start', command=self.initial_drawing)
-        self.canvas.create_window(130, 110, window=self.start_button)
+        self.control_simulation_button = Button(text='Start', command=self.initial_drawing)
+        self.canvas.create_window(130, 110, window=self.control_simulation_button)
         self.lines = None
         self.chosen_line = None
         self.previous_stop = None
+        self.simulation_thread = None
         self.all_stops = []
 
     def start_simulation(self):
@@ -42,8 +43,20 @@ class MainWindow:
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
+        side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
+        self.resume_simulation()
+        side_bar.create_window(50, 40, window=self.control_simulation_button)
+        self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.network.draw_network()
         self.main(self.network)
+
+    def pause_simulation(self):
+        self.control_simulation_button.config(text='Start', command=lambda: self.resume_simulation())
+        self.simulation_thread.pause()
+
+    def resume_simulation(self):
+        self.control_simulation_button.config(text='Stop', command=lambda: self.pause_simulation())
+        return self.simulation_thread.resume()
 
     def initial_drawing(self):
         self.canvas.destroy()
@@ -52,9 +65,10 @@ class MainWindow:
         self.canvas = Canvas(self.window, width=width, height=height, bg='black')
         self.canvas.pack(fill='both', expand=True)
         side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
-        self.start_button = Button(text='Start', command=lambda: threading.Thread(target=self.start_simulation).start())
+        self.simulation_thread = Worker(self.start_simulation)
+        self.control_simulation_button = Button(text='Start', command=lambda: self.simulation_thread.start())
         add_line_button = Button(text='Add line', command=self.add_line)
-        side_bar.create_window(50, 100, window=self.start_button)
+        side_bar.create_window(50, 100, window=self.control_simulation_button)
         side_bar.create_window(50, 40, window=add_line_button)
         self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
@@ -122,7 +136,7 @@ class MainWindow:
 
         while True:
             self.network.run_lines()
-            time.sleep(1)
+            sleep(1)
             yield env.timeout(1)
             time_passed += 1
             if time_passed % bus_frequency == 0:
