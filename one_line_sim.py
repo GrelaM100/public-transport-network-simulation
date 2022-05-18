@@ -25,12 +25,13 @@ class MainWindow:
         self.entry_bus_size.insert(END, '22')
         self.entry_bus_frequency = Entry(self.window)
         self.entry_bus_frequency.insert(END, '4')
+        self.buttons = {'control_simulation': Button(text='Start', command=self.initial_drawing)}
+        self.other_canvases = {}
         self.canvas.create_text(85, 20, text='Bus size')
         self.canvas.create_window(85, 40, window=self.entry_bus_size)
         self.canvas.create_text(85, 60, text='Bus frequency')
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
-        self.control_simulation_button = Button(text='Start', command=self.initial_drawing)
-        self.canvas.create_window(130, 110, window=self.control_simulation_button)
+        self.canvas.create_window(130, 110, window=self.buttons['control_simulation'])
         self.lines = None
         self.chosen_line = None
         self.previous_stop = None
@@ -38,24 +39,28 @@ class MainWindow:
         self.all_stops = []
 
     def start_simulation(self):
-        self.canvas.delete('all')
+        for key, button in self.buttons.copy().items():
+            if key != 'control_simulation':
+                button.destroy()
+                del self.buttons[key]
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
-        side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
         self.resume_simulation()
-        side_bar.create_window(50, 40, window=self.control_simulation_button)
-        self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.network.draw_network()
         self.main(self.network)
 
     def pause_simulation(self):
-        self.control_simulation_button.config(text='Start', command=lambda: self.resume_simulation())
+        self.buttons['control_simulation'].config(text='Start', command=lambda: self.resume_simulation())
+        self.buttons['save_stats'] = Button(text='Save statistics', command=self.network.statistics.save_data_to_csv())
+        self.other_canvases['side_bar'].create_window(50, 140, window=self.buttons['save_stats'])
         self.simulation_thread.pause()
 
     def resume_simulation(self):
-        self.control_simulation_button.config(text='Stop', command=lambda: self.pause_simulation())
+        self.buttons['control_simulation'].config(text='Stop', command=lambda: self.pause_simulation())
+        if 'save_stats' in self.buttons:
+            self.buttons['save_stats'].destroy()
         return self.simulation_thread.resume()
 
     def initial_drawing(self):
@@ -66,10 +71,11 @@ class MainWindow:
         self.canvas.pack(fill='both', expand=True)
         side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
         self.simulation_thread = Worker(self.start_simulation)
-        self.control_simulation_button = Button(text='Start', command=lambda: self.simulation_thread.start())
-        add_line_button = Button(text='Add line', command=self.add_line)
-        side_bar.create_window(50, 100, window=self.control_simulation_button)
-        side_bar.create_window(50, 40, window=add_line_button)
+        self.buttons['control_simulation'] = Button(text='Start', command=lambda: self.simulation_thread.start())
+        self.buttons['add_line'] = Button(text='Add line', command=self.add_line)
+        side_bar.create_window(50, 100, window=self.buttons['control_simulation'])
+        side_bar.create_window(50, 40, window=self.buttons['add_line'])
+        self.other_canvases['side_bar'] = side_bar
         self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
 
@@ -145,6 +151,7 @@ class MainWindow:
                 print(self.network.statistics.return_statistics())
             self.network.passengers_arriving()
             self.network.create_traffic_jams()
+            self.network.statistics.update_table(time_passed)
 
 
 if __name__ == "__main__":
