@@ -1,4 +1,7 @@
 import pandas as pd
+from tkinter import *
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class Statistics:
@@ -40,3 +43,12 @@ class Statistics:
 
     def save_data_to_csv(self):
         self.statistics_table.to_csv('statistics.csv')
+
+    def plot_data(self, root):
+        new_window = Toplevel(root)
+        new_window.title('Bus load')
+        fig = plt.Figure(figsize=(10, 8), dpi=100)
+        fig.add_subplot(111).plot(self.statistics_table.index, self.statistics_table['Bus load'])
+        canvas = FigureCanvasTkAgg(fig, master=new_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack()
