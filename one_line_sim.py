@@ -54,7 +54,7 @@ class MainWindow:
     def pause_simulation(self):
         self.buttons['control_simulation'].config(text='Start', command=lambda: self.resume_simulation())
         self.buttons['save_stats'] = Button(text='Save statistics', command=lambda: self.network.statistics.save_data_to_csv())
-        self.buttons['plot data'] = Button(text='Show plot', command=lambda: self.network.statistics.plot_data(root))
+        self.buttons['plot data'] = Button(text='Show plot', command=lambda: self.network.statistics.window_plot_data(root))
         self.other_canvases['side_bar'].create_window(50, 140, window=self.buttons['save_stats'])
         self.other_canvases['side_bar'].create_window(50, 180, window=self.buttons['plot data'])
         self.simulation_thread.pause()
