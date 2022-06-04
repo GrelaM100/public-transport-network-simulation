@@ -1,4 +1,5 @@
 import random
+import math
 from passenger import Passenger
 from bus import Bus
 from stop import Stop
@@ -8,10 +9,16 @@ import networkx as nx
 
 
 class Network:
-    def __init__(self, env, bus_size, bus_frequency, canvas):
+    def __init__(self, env, bus_size, bus_frequency, traffic_rate, canvas):
         self.env = env
         self.bus_size = bus_size
         self.bus_frequency = bus_frequency
+        if traffic_rate == "small":
+            self.traffic_rate = 0.3
+        elif traffic_rate == "heavy":
+            self.traffic_rate = 3
+        else:
+            self.traffic_rate = 1.2
         self.lines_stops = {}
         self.all_stops = []
         self.passengers_at_stops = []
@@ -20,6 +27,7 @@ class Network:
         self.graph = None
         self.traffic_jams = []
         self.statistics = None
+        self.time_passed = 0
 
     def setup(self, lines=None):
         self.initialize_network(lines)
@@ -29,7 +37,9 @@ class Network:
         self.statistics = Statistics(self.bus_size)
 
     def passengers_arriving(self):
-        no_of_passengers = random.randint(4, 7)
+        self.time_passed += 1
+        no_of_passengers = random.randint(math.floor(self.traffic_rate * len(self.all_stops)) - 3,
+                                          math.floor(self.traffic_rate * len(self.all_stops)) + 3)
         for i in range(no_of_passengers):
             rand_start = random.sample(self.all_stops, 1)
             rand_destination = random.sample(self.all_stops, 1)
@@ -40,14 +50,15 @@ class Network:
             self.passengers_at_stops.append(new_passenger)
             rand_start[0].add_passenger(new_passenger)
 
-    def drive_from_depot(self):
+    def drive_from_depot(self): #musi uwzględniać częstość busów
         for name, line in self.lines_stops.items():
-            bus1 = Bus(self.env, name, line.color, line.stops, self.bus_size)
-            bus2 = Bus(self.env, name, line.color, line.stops, self.bus_size, "other_way")
-            self.buses.append(bus1)
-            self.buses.append(bus2)
-            bus1.visualize_bus_at_stop(bus1.future_stops[0], self.canvas)
-            bus2.visualize_bus_at_stop(bus2.future_stops[0], self.canvas)
+            if (self.time_passed + line.start_time) % self.bus_frequency == 0:
+                bus1 = Bus(self.env, name, line.color, line.stops, self.bus_size)
+                bus2 = Bus(self.env, name, line.color, line.stops, self.bus_size, "other_way")
+                self.buses.append(bus1)
+                self.buses.append(bus2)
+                bus1.visualize_bus_at_stop(bus1.future_stops[0], self.canvas)
+                bus2.visualize_bus_at_stop(bus2.future_stops[0], self.canvas)
 
     def run_lines(self):
         buses_ending_route = []
@@ -73,7 +84,7 @@ class Network:
                     buses_ending_route.append(bus)
                 else:
                     self.statistics.register_data("bus", len(bus.passengers))
-                    
+
         for passenger in self.passengers_at_stops:
             passenger.time_commuting += 1
         for bus in buses_ending_route:
@@ -83,15 +94,15 @@ class Network:
         if lines is None:
             green_line_stops = [Stop("Trawa", 20, 50), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
                                 Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]
-            green_line = Line('Zielona', 'green')
-            yellow_line = Line('Żółta', 'yellow')
+            green_line = Line('Zielona', 'green', self.bus_frequency)
+            yellow_line = Line('Żółta', 'yellow', self.bus_frequency)
             yellow_line_stops = [Stop("Piasek", 50, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
                                  Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 1000, 50)]
             self.add_line_to_network(green_line, green_line_stops)
             self.add_line_to_network(yellow_line, yellow_line_stops)
         else:
             for line in lines:
-                self.add_line_to_network(Line(line.name, line.color), line.stops)
+                self.add_line_to_network(Line(line.name, line.color, self.bus_frequency), line.stops)
 
     def add_line_to_network(self, line, stops):
         if line.name not in self.lines_stops:

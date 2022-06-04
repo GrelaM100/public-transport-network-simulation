@@ -12,7 +12,8 @@ from stop import Stop
 def get_params_for_sim():
     bus_size = int(input("Ile miejsc ma być w autobusach?"))
     bus_frequency = int(input("Co ile czasu mają jeździć autobusy?"))
-    return [bus_size, bus_frequency]
+    traffic_rate = int(input("Jakie ma być natężenie ruchu? 1 - małe, 2 - normalne, 3 - godziny szczytu."))
+    return [bus_size, bus_frequency, traffic_rate]
 
 
 class MainWindow:
@@ -25,12 +26,16 @@ class MainWindow:
         self.entry_bus_size.insert(END, '22')
         self.entry_bus_frequency = Entry(self.window)
         self.entry_bus_frequency.insert(END, '4')
+        self.entry_traffic_rate = Entry(self.window)
+        self.entry_traffic_rate.insert(END, 'normal')
         self.buttons = {'control_simulation': Button(text='Start', command=self.initial_drawing)}
         self.other_canvases = {}
         self.canvas.create_text(85, 20, text='Bus size')
         self.canvas.create_window(85, 40, window=self.entry_bus_size)
         self.canvas.create_text(85, 60, text='Bus frequency')
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
+        self.canvas.create_text(85, 100, text='Traffic: heavy/normal/small')
+        self.canvas.create_window(85, 120, window=self.entry_traffic_rate)
         self.canvas.create_window(130, 110, window=self.buttons['control_simulation'])
         self.lines = None
         self.chosen_line = None
@@ -44,7 +49,8 @@ class MainWindow:
                 button.destroy()
                 del self.buttons[key]
         env = simpy.Environment()
-        self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()), self.canvas)
+        self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()),
+                               str(self.entry_traffic_rate.get()), self.canvas)
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
         self.resume_simulation()
@@ -92,7 +98,7 @@ class MainWindow:
         line_name = line_name_entry.get()
         line_name_entry.destroy()
         color = askcolor(title='Line color')
-        line = Line(line_name, color[1])
+        line = Line(line_name, color[1], int(self.entry_bus_frequency.get()))
         if self.lines is None:
             self.lines = []
         self.lines.append(line)
@@ -137,24 +143,21 @@ class MainWindow:
         return None
 
     def main(self, network):
-        network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency))
+        network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency,
+                                                network.traffic_rate))
         network.env.run()
 
-    def run_simulation(self, env, bus_size, bus_frequency, line_colour="Zielona"):
+    def run_simulation(self, env, bus_size, bus_frequency, traffic_rate):
         time_passed = 0
 
         while True:
             self.network.run_lines()
             sleep(1)
             yield env.timeout(1)
-            time_passed += 1
-            if time_passed % bus_frequency == 0:
-                self.network.drive_from_depot()
-            if time_passed % 10 == 0:
-                print(self.network.statistics.return_statistics())
+            self.network.drive_from_depot()
             self.network.passengers_arriving()
             self.network.create_traffic_jams()
-            self.network.statistics.update_table(time_passed)
+            self.network.statistics.update_table(self.network.time_passed)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,15 @@
+import random
+
+
 class Line:
-    def __init__(self, name, color, stops=None):
+    def __init__(self, name, color, bus_frequency, stops=None):
         self.name = name
         self.color = color
         if stops is None:
             self.stops = []
         else:
             self.stops = stops
+        self.start_time = random.randint(0, bus_frequency - 1)
 
     def __iter__(self):
         self.current_stop = self.stops[0]
