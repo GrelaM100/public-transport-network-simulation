@@ -36,7 +36,7 @@ class MainWindow:
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
         self.canvas.create_text(85, 100, text='Traffic: heavy/normal/small')
         self.canvas.create_window(85, 120, window=self.entry_traffic_rate)
-        self.canvas.create_window(130, 110, window=self.buttons['control_simulation'])
+        self.canvas.create_window(130, 150, window=self.buttons['control_simulation'])
         self.lines = None
         self.chosen_line = None
         self.previous_stop = None
