@@ -31,7 +31,7 @@ class Statistics:
                     "Commuting time": sum(self.commute_times) / len(self.commute_times),
                     "Traffic delays": self.buses_in_traffic}
         except ZeroDivisionError:
-            data = {"Bus load": sum(self.buses_load) / (self.bus_size * len(self.buses_load)),
+            data = {"Bus load": 0,
                     "Commuting time": 0,
                     "Traffic delays": self.buses_in_traffic}
 
