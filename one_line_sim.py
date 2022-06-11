@@ -20,6 +20,7 @@ class MainWindow:
     def __init__(self, main_window):
         self.network = None
         self.window = main_window
+        self.window.protocol("WM_DELETE_WINDOW", self.safe_exit)
         self.canvas = Canvas(self.window, width=200, height=200)
         self.canvas.pack(fill='both', expand=True)
         self.entry_bus_size = Entry(self.window)
@@ -51,6 +52,9 @@ class MainWindow:
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()),
                                str(self.entry_traffic_rate.get()), self.canvas)
+        self.buttons['plot data'] = Button(text='Show plot',
+                                           command=lambda: self.network.statistics.window_plot_data(root))
+        self.other_canvases['side_bar'].create_window(50, 180, window=self.buttons['plot data'])
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
         self.resume_simulation()
@@ -59,17 +63,15 @@ class MainWindow:
 
     def pause_simulation(self):
         self.buttons['control_simulation'].config(text='Start', command=lambda: self.resume_simulation())
-        self.buttons['save_stats'] = Button(text='Save statistics', command=lambda: self.network.statistics.save_data_to_csv())
-        self.buttons['plot data'] = Button(text='Show plot', command=lambda: self.network.statistics.window_plot_data(root))
+        self.buttons['save_stats'] = Button(text='Save statistics',
+                                            command=lambda: self.network.statistics.save_data_to_csv())
         self.other_canvases['side_bar'].create_window(50, 140, window=self.buttons['save_stats'])
-        self.other_canvases['side_bar'].create_window(50, 180, window=self.buttons['plot data'])
         self.simulation_thread.pause()
 
     def resume_simulation(self):
         self.buttons['control_simulation'].config(text='Stop', command=lambda: self.pause_simulation())
         if 'save_stats' in self.buttons:
             self.buttons['save_stats'].destroy()
-            self.buttons['plot data'].destroy()
         return self.simulation_thread.resume()
 
     def initial_drawing(self):
@@ -158,6 +160,12 @@ class MainWindow:
             self.network.passengers_arriving()
             self.network.create_traffic_jams()
             self.network.statistics.update_table(self.network.time_passed)
+            self.network.statistics.update_plot()
+
+    def safe_exit(self):
+        if self.simulation_thread is not None:
+            self.simulation_thread.stop()
+        root.destroy()
 
 
 if __name__ == "__main__":
