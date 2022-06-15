@@ -1,6 +1,7 @@
 from worker import Worker, sleep
 from tkinter import *
 from tkinter.colorchooser import askcolor
+import json
 
 import simpy
 
@@ -29,6 +30,8 @@ class MainWindow:
         self.entry_bus_frequency.insert(END, '4')
         self.entry_traffic_rate = Entry(self.window)
         self.entry_traffic_rate.insert(END, 'normal')
+        self.save_network_as = None
+        self.file_to_load_network = None
         self.buttons = {'control_simulation': Button(text='Start', command=self.initial_drawing)}
         self.other_canvases = {}
         self.canvas.create_text(85, 20, text='Bus size')
@@ -45,6 +48,8 @@ class MainWindow:
         self.all_stops = []
 
     def start_simulation(self):
+        self.save_network_as = Entry(self.window)
+        self.save_network_as.insert(END, "my_network")
         for key, button in self.buttons.copy().items():
             if key != 'control_simulation':
                 button.destroy()
@@ -54,7 +59,12 @@ class MainWindow:
                                str(self.entry_traffic_rate.get()), self.canvas)
         self.buttons['plot data'] = Button(text='Show plot',
                                            command=lambda: self.network.statistics.window_plot_data(root))
+        self.buttons['save network'] = Button(text='Save network', command=lambda: self.network.save_configuration(
+            str(self.save_network_as.get())))
         self.other_canvases['side_bar'].create_window(50, 180, window=self.buttons['plot data'])
+        self.other_canvases['side_bar'].create_window(60, 300, window=self.buttons['save network'])
+        self.other_canvases['side_bar'].create_text(70, 240, text="File to save the network")
+        self.other_canvases['side_bar'].create_window(70, 260, window=self.save_network_as)
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
         self.resume_simulation()
@@ -75,17 +85,24 @@ class MainWindow:
         return self.simulation_thread.resume()
 
     def initial_drawing(self):
+        self.file_to_load_network = Entry(self.window)
+        self.file_to_load_network.insert(END, "my_network")
         self.canvas.destroy()
         width = 1124
         height = 1024
         self.canvas = Canvas(self.window, width=width, height=height, bg='black')
         self.canvas.pack(fill='both', expand=True)
-        side_bar = Canvas(self.canvas, width=100, height=1024, bg='grey')
+        side_bar = Canvas(self.canvas, width=150, height=1024, bg='grey')
         self.simulation_thread = Worker(self.start_simulation)
         self.buttons['control_simulation'] = Button(text='Start', command=lambda: self.simulation_thread.start())
         self.buttons['add_line'] = Button(text='Add line', command=self.add_line)
+        self.buttons['load_network'] = Button(text='Load network', command=lambda: self.load_network_from_file(
+            str(self.file_to_load_network.get())))
         side_bar.create_window(50, 100, window=self.buttons['control_simulation'])
         side_bar.create_window(50, 40, window=self.buttons['add_line'])
+        side_bar.create_window(60, 240, window=self.buttons['load_network'])
+        side_bar.create_text(70, 160, text="File to load network from")
+        side_bar.create_window(70, 200, window=self.file_to_load_network)
         self.other_canvases['side_bar'] = side_bar
         self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
@@ -143,6 +160,30 @@ class MainWindow:
                     return stop
 
         return None
+
+    def load_network_from_file(self, filename):
+        with open(filename, 'r') as json_file:
+            json_string = json_file.read()
+        configuration = json.loads(json_string)
+        for line_info in configuration:
+            line_name = line_info[0]
+            line_color = line_info[1]
+            line_stops = line_info[2]
+            line = Line(line_name, line_color, int(self.entry_bus_frequency.get()))
+            if self.lines is None:
+                self.lines = []
+            self.lines.append(line)
+            for stop_info in line_stops:
+                stop = Stop(stop_info[0], stop_info[1], stop_info[2])
+                line.add_stop_to_line(stop)
+                self.canvas.create_text(stop_info[1], stop_info[2], fill='red', text=stop)
+                if self.previous_stop is not None:
+                    self.canvas.create_line(self.previous_stop.x_position, self.previous_stop.y_position,
+                                            stop.x_position, stop.y_position, fill=line_color)
+
+                self.previous_stop = stop
+                if stop not in self.all_stops:
+                    self.all_stops.append(stop)
 
     def main(self, network):
         network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency,

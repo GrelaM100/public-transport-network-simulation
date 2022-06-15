@@ -6,6 +6,7 @@ from stop import Stop
 from line import Line
 from network_statistics import Statistics
 import networkx as nx
+import json
 
 
 class Network:
@@ -153,3 +154,14 @@ class Network:
     def create_traffic_jams(self):
         no_of_jams = random.randint(0, 2)
         self.traffic_jams = random.sample(self.all_stops, no_of_jams)
+
+    def get_configuration(self):
+        configuration = []
+        for line in self.lines_stops.values():
+            configuration.append(line.get_identifiers())
+        return configuration
+
+    def save_configuration(self, filename):
+        json_string = json.dumps(self.get_configuration())
+        with open(filename, "w") as json_file:
+            json_file.write(json_string)
