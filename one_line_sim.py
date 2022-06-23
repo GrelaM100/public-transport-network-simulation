@@ -1,6 +1,7 @@
 from worker import Worker, sleep
 from tkinter import *
 from tkinter.colorchooser import askcolor
+from tkinter import filedialog as fd
 import json
 
 import simpy
@@ -28,18 +29,18 @@ class MainWindow:
         self.entry_bus_size.insert(END, '22')
         self.entry_bus_frequency = Entry(self.window)
         self.entry_bus_frequency.insert(END, '4')
-        self.entry_traffic_rate = Entry(self.window)
-        self.entry_traffic_rate.insert(END, 'normal')
-        self.save_network_as = None
-        self.file_to_load_network = None
+        self.traffic_rate = StringVar()
+        self.traffic_rate.set('normal')
+        traffic_rate_options = ['small', 'normal', 'heavy']
+        self.traffic_rate_dropdown = OptionMenu(self.window, self.traffic_rate, *traffic_rate_options)
         self.buttons = {'control_simulation': Button(text='Start', command=self.initial_drawing)}
         self.other_canvases = {}
         self.canvas.create_text(85, 20, text='Bus size')
         self.canvas.create_window(85, 40, window=self.entry_bus_size)
         self.canvas.create_text(85, 60, text='Bus frequency')
         self.canvas.create_window(85, 80, window=self.entry_bus_frequency)
-        self.canvas.create_text(85, 100, text='Traffic: heavy/normal/small')
-        self.canvas.create_window(85, 120, window=self.entry_traffic_rate)
+        self.canvas.create_text(30, 110, text='Traffic:')
+        self.canvas.create_window(100, 110, window=self.traffic_rate_dropdown)
         self.canvas.create_window(130, 150, window=self.buttons['control_simulation'])
         self.lines = None
         self.chosen_line = None
@@ -48,23 +49,18 @@ class MainWindow:
         self.all_stops = []
 
     def start_simulation(self):
-        self.save_network_as = Entry(self.window)
-        self.save_network_as.insert(END, "my_network")
         for key, button in self.buttons.copy().items():
             if key != 'control_simulation':
                 button.destroy()
                 del self.buttons[key]
         env = simpy.Environment()
         self.network = Network(env, int(self.entry_bus_size.get()), int(self.entry_bus_frequency.get()),
-                               str(self.entry_traffic_rate.get()), self.canvas)
+                               str(self.traffic_rate.get()), self.canvas)
         self.buttons['plot data'] = Button(text='Show plot',
                                            command=lambda: self.network.statistics.window_plot_data(root))
-        self.buttons['save network'] = Button(text='Save network', command=lambda: self.network.save_configuration(
-            str(self.save_network_as.get())))
+        self.buttons['save network'] = Button(text='Save network', command=lambda: self.save_network_to_file())
         self.other_canvases['side_bar'].create_window(50, 180, window=self.buttons['plot data'])
         self.other_canvases['side_bar'].create_window(60, 300, window=self.buttons['save network'])
-        self.other_canvases['side_bar'].create_text(70, 240, text="File to save the network")
-        self.other_canvases['side_bar'].create_window(70, 260, window=self.save_network_as)
         self.canvas.unbind('<Button 1>')
         self.network.setup(self.lines)
         self.resume_simulation()
@@ -85,8 +81,6 @@ class MainWindow:
         return self.simulation_thread.resume()
 
     def initial_drawing(self):
-        self.file_to_load_network = Entry(self.window)
-        self.file_to_load_network.insert(END, "my_network")
         self.canvas.destroy()
         width = 1124
         height = 1024
@@ -96,13 +90,10 @@ class MainWindow:
         self.simulation_thread = Worker(self.start_simulation)
         self.buttons['control_simulation'] = Button(text='Start', command=lambda: self.simulation_thread.start())
         self.buttons['add_line'] = Button(text='Add line', command=self.add_line)
-        self.buttons['load_network'] = Button(text='Load network', command=lambda: self.load_network_from_file(
-            str(self.file_to_load_network.get())))
+        self.buttons['load_network'] = Button(text='Load network', command=lambda: self.load_network_from_file())
         side_bar.create_window(50, 100, window=self.buttons['control_simulation'])
         side_bar.create_window(50, 40, window=self.buttons['add_line'])
         side_bar.create_window(60, 240, window=self.buttons['load_network'])
-        side_bar.create_text(70, 160, text="File to load network from")
-        side_bar.create_window(70, 200, window=self.file_to_load_network)
         self.other_canvases['side_bar'] = side_bar
         self.canvas.create_window(1130, 0, anchor=NE, window=side_bar)
         self.canvas.bind("<Button-1>", self.add_stop)
@@ -161,7 +152,12 @@ class MainWindow:
 
         return None
 
-    def load_network_from_file(self, filename):
+    def save_network_to_file(self):
+        filename = fd.asksaveasfilename(filetypes=(("JSON Files", "*.json"), ("All files", "*.*")))
+        self.network.save_configuration(filename)
+
+    def load_network_from_file(self):
+        filename = fd.askopenfilename()
         with open(filename, 'r') as json_file:
             json_string = json_file.read()
         configuration = json.loads(json_string)
