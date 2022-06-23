@@ -181,6 +181,8 @@ class MainWindow:
                 if stop not in self.all_stops:
                     self.all_stops.append(stop)
 
+            self.previous_stop = None
+
     def main(self, network):
         network.env.process(self.run_simulation(network.env, network.bus_size, network.bus_frequency,
                                                 network.traffic_rate))
