@@ -34,3 +34,12 @@ class Line:
 
     def add_stop_to_line(self, stop):
         self.stops.append(stop)
+
+    def get_identifiers(self):
+        return [self.name, self.color, self.get_stops()]
+
+    def get_stops(self):
+        stops = []
+        for stop in self.stops:
+            stops.append(stop.get_identifiers())
+        return stops

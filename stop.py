@@ -20,3 +20,6 @@ class Stop:
 
     def remove_passenger(self, passenger):
         self.passengers_at_stop.remove(passenger)
+
+    def get_identifiers(self):
+        return [self.name, self.x_position, self.y_position]
