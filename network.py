@@ -68,15 +68,16 @@ class Network:
             if bus.future_stops[0] in self.traffic_jams:
                 for passenger in bus.passengers:
                     passenger.time_commuting += 1
-                self.statistics.register_data("jam")
+                self.statistics.register_data("jam", 1)
                 self.statistics.register_data("bus", len(bus.passengers))
             else:
                 hopped_off = bus.drop_passengers_off()
-                if bus.take_passengers(self.passengers_at_stops) != None:
-                    hopped_on = bus.take_passengers(self.passengers_at_stops)
+                hopped_overcrowded = bus.take_passengers(self.passengers_at_stops)
+                if "overcrowded" in hopped_overcrowded:
+                    self.statistics.register_data("crowd", 1)
+                    hopped_on = list(filter(lambda a: a != "overcrowded", hopped_overcrowded))
                 else:
-                    hopped_on = []
-                    self.statistics.register_data("crowd")
+                    hopped_on = hopped_overcrowded
                 current_stop, end_of_line = bus.drive_from_stop()
                 for passenger in hopped_off:
                     if passenger.end_journey() is not None:
