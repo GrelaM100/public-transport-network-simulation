@@ -51,7 +51,7 @@ class Network:
             self.passengers_at_stops.append(new_passenger)
             rand_start[0].add_passenger(new_passenger)
 
-    def drive_from_depot(self): #musi uwzględniać częstość busów
+    def drive_from_depot(self):
         for name, line in self.lines_stops.items():
             if (self.time_passed + line.start_time) % self.bus_frequency == 0:
                 bus1 = Bus(self.env, name, line.color, line.stops, self.bus_size)
@@ -68,11 +68,15 @@ class Network:
             if bus.future_stops[0] in self.traffic_jams:
                 for passenger in bus.passengers:
                     passenger.time_commuting += 1
-                self.statistics.register_data("jam", 1)
+                self.statistics.register_data("jam")
                 self.statistics.register_data("bus", len(bus.passengers))
             else:
                 hopped_off = bus.drop_passengers_off()
-                hopped_on = bus.take_passengers(self.passengers_at_stops)
+                if bus.take_passengers(self.passengers_at_stops) != None:
+                    hopped_on = bus.take_passengers(self.passengers_at_stops)
+                else:
+                    hopped_on = []
+                    self.statistics.register_data("crowd")
                 current_stop, end_of_line = bus.drive_from_stop()
                 for passenger in hopped_off:
                     if passenger.end_journey() is not None:
@@ -93,12 +97,12 @@ class Network:
 
     def initialize_network(self, lines=None):
         if lines is None:
-            green_line_stops = [Stop("Trawa", 20, 50), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
-                                Stop("Pojęcie", 680, 680), Stop("Żaba", 900, 900)]
+            green_line_stops = [Stop("Trawa", 50, 50), Stop("Światło", 240, 240), Stop("Jabłko", 460, 460),
+                                Stop("Pojęcie", 600, 600), Stop("Żaba", 750, 750)]
             green_line = Line('Zielona', 'green', self.bus_frequency)
             yellow_line = Line('Żółta', 'yellow', self.bus_frequency)
-            yellow_line_stops = [Stop("Piasek", 50, 1000), Stop("Słońce", 220, 820), Stop("Światło", 240, 240),
-                                 Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 1000, 50)]
+            yellow_line_stops = [Stop("Piasek", 50, 600), Stop("Słońce", 100, 400), Stop("Światło", 240, 240),
+                                 Stop("Zęby", 420, 220), Stop("Żółtko", 620, 100), Stop("Banan", 850, 80)]
             self.add_line_to_network(green_line, green_line_stops)
             self.add_line_to_network(yellow_line, yellow_line_stops)
         else:
