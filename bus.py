@@ -55,12 +55,12 @@ class Bus:
                         passenger.decide_to_hop_on(self.future_stops[1]):
                     if len(self.passengers) < self.size:
                         passenger.current_stop = Stop('drodze')
+                        if passenger in current_stop.passengers_at_stop:
+                            current_stop.remove_passenger(passenger)
+                        self.passengers.append(passenger)
+                        taken_passengers.append(passenger)
                     else:
-                        return None
-                    if passenger in current_stop.passengers_at_stop:
-                        current_stop.remove_passenger(passenger)
-                    self.passengers.append(passenger)
-                    taken_passengers.append(passenger)
+                        taken_passengers.append("overcrowded")
             for passenger in self.passengers:
                 passenger.time_commuting += 1
         return taken_passengers
