@@ -52,9 +52,11 @@ class Bus:
         if len(self.future_stops) > 1:
             for passenger in passengers_everywhere:
                 if passenger.current_stop == current_stop and \
-                        passenger.decide_to_hop_on(self.future_stops[1]) and \
-                        len(self.passengers) < self.size:
-                    passenger.current_stop = Stop('drodze')
+                        passenger.decide_to_hop_on(self.future_stops[1]):
+                    if len(self.passengers) < self.size:
+                        passenger.current_stop = Stop('drodze')
+                    else:
+                        return None
                     if passenger in current_stop.passengers_at_stop:
                         current_stop.remove_passenger(passenger)
                     self.passengers.append(passenger)

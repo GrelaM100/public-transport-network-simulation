@@ -10,33 +10,39 @@ class Statistics:
         self.buses_load = []
         self.commute_times = []
         self.buses_in_traffic = 0
+        self.overcrowded_buses = 0
         self.statistics_table = None
         self.ax = None
         self.canvas = None
         self.indicator = 'Bus load'
 
-    def register_data(self, type, data):
+    def register_data(self, type, data = 1):
         if type == "bus":
             self.buses_load.append(data)
         elif type == "pas":
             self.commute_times.append(data)
         elif type == "jam":
             self.buses_in_traffic += data
+        elif type == "crowd":
+            self.overcrowded_buses += 1
 
     def return_statistics(self):
         return [{"Bus load": sum(self.buses_load) / (self.bus_size * len(self.buses_load)),
                  "Commuting time": sum(self.commute_times) / len(self.commute_times),
-                 "Traffic delays": self.buses_in_traffic}]
+                 "Traffic delays": self.buses_in_traffic,
+                 "Overcrowded buses" : self.overcrowded_buses}]
 
     def update_table(self, time):
         try:
             data = {"Bus load": sum(self.buses_load) / (self.bus_size * len(self.buses_load)),
                     "Commuting time": sum(self.commute_times) / len(self.commute_times),
-                    "Traffic delays": self.buses_in_traffic}
+                    "Traffic delays": self.buses_in_traffic,
+                    "Overcrowded buses" : self.overcrowded_buses}
         except ZeroDivisionError:
             data = {"Bus load": 0,
                     "Commuting time": 0,
-                    "Traffic delays": self.buses_in_traffic}
+                    "Traffic delays": self.buses_in_traffic,
+                    "Overcrowded buses" : self.overcrowded_buses}
 
         if self.statistics_table is None:
             self.statistics_table = pd.DataFrame(data=data, index=[time])
@@ -78,9 +84,12 @@ class Statistics:
                                command=lambda: self.change_title_and_plot(new_window, 'Commuting time'))
         buses_in_traffic_button = Button(frame, text='Traffic delays',
                                          command=lambda: self.change_title_and_plot(new_window, 'Traffic delays'))
+        overcrowded_button = Button(frame, text='Overcrowded buses',
+                                         command=lambda: self.change_title_and_plot(new_window, 'Overcrowded buses'))
         bus_load_button.pack(side=TOP)
         commute_times.pack(side=TOP)
         buses_in_traffic_button.pack(side=TOP)
+        overcrowded_button.pack(side=TOP)
         self.plot_data()
 
     def update_plot(self):
