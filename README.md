@@ -24,7 +24,8 @@ When everything is set, click 'Start' button on the right bar and watch simulati
 The results can be seen in main window, after clicking 'Show plot' button a second window with plot shows up.
 The second window displays plot with currently chosen statistic, to change this statistic use right side buttons.
 The simulation can be paused and resumed any time. When simulation is stopped it is also possible to save statistics in `.csv` file
-using 'Save statistics' button.
+using 'Save statistics' button. Prepared network configuration can be saved into `.json` file using 'Save network' button. 
+Previously saved networks can be loaded by click 'Load network' button.
 
 ## Examples
 
